@@ -9,6 +9,7 @@ import { WellnessHub } from './components/wellness/WellnessHub';
 import { Settings } from './components/settings/Settings';
 import { Onboarding } from './components/onboarding/Onboarding';
 import { Toaster } from './components/ui/sonner';
+import { AuthGate } from './components/auth/AuthGate';
 
 const MainContent = () => {
   const { currentView, profile } = useGame();
@@ -62,10 +63,12 @@ const MainContent = () => {
 
 const App = () => {
   return (
-    <GameProvider>
-      <MainContent />
-      <Toaster position="top-center" />
-    </GameProvider>
+    <AuthGate>
+      <GameProvider>
+        <MainContent />
+        <Toaster position="top-center" />
+      </GameProvider>
+    </AuthGate>
   );
 };
 
