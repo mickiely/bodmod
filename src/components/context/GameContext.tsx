@@ -106,11 +106,20 @@ interface GameContextType {
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
 export const GameProvider = ({ children }: { children: ReactNode }) => {
-  const [profile, setProfile] = useState<PersonalProfile>(() => {\n    try {\n      const saved = localStorage.getItem('bodmod-profile');\n      return saved ? { ...defaultProfile, ...JSON.parse(saved) } : defaultProfile;\n    } catch { return defaultProfile; }\n  });
+  const [profile, setProfile] = useState<PersonalProfile>(() => {
+    try {
+      const saved = localStorage.getItem('bodmod-profile');
+      return saved ? { ...defaultProfile, ...JSON.parse(saved) } : defaultProfile;
+    } catch { return defaultProfile; }
+  });
   const [missions, setMissions] = useState<Mission[]>(defaultMissions);
   const [logs, setLogs] = useState<FoodLogEntry[]>([]);
   const [moodLogs, setMoodLogs] = useState<MoodEntry[]>([]);
-  const [currentView, setCurrentView] = useState('dashboard');\n\n  useEffect(() => {\n    localStorage.setItem('bodmod-profile', JSON.stringify(profile));\n  }, [profile]);
+  const [currentView, setCurrentView] = useState('dashboard');
+
+  useEffect(() => {
+    localStorage.setItem('bodmod-profile', JSON.stringify(profile));
+  }, [profile]);
 
   const updateProfile = (updates: Partial<PersonalProfile>) => {
     setProfile(prev => ({ ...prev, ...updates }));
