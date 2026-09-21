@@ -1,6 +1,6 @@
 import React from 'react';
 import { useGame } from '../context/GameContext';
-import { LayoutDashboard, History, ScanBarcode, HeartPulse, UserCircle, Settings, LogOut, Menu } from 'lucide-react';
+import { LayoutDashboard, History, ScanBarcode, HeartPulse, UserCircle, Settings, Menu, CheckCircle2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { cn } from '../ui/utils';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
@@ -92,7 +92,7 @@ export const AppShell = ({ children }: AppShellProps) => {
                 <span className="font-black text-lg tracking-tighter uppercase italic text-slate-800">BODMOD</span>
             </div>
             
-            <Sheet>
+            <div className="ml-auto mr-2 flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1">\n                <div className="w-6 h-6 rounded-full bg-indigo-600 text-white text-[10px] font-black flex items-center justify-center">{profile.displayName?.slice(0,2).toUpperCase() || "P1"}</div>\n                <div className="hidden sm:block leading-tight"><div className="text-[11px] font-black">{profile.displayName}</div><div className="text-[9px] font-bold text-emerald-600 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Profile active</div></div>\n            </div>\n            <Sheet>
                 <SheetTrigger asChild>
                     <Button variant="ghost" size="icon">
                         <Menu className="w-6 h-6 text-slate-700" />
