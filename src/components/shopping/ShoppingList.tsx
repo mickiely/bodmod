@@ -6,10 +6,19 @@ import { ShoppingCart, Plus, Trash2, ScanBarcode, Check, WalletCards, Tag } from
 import { cn } from '../ui/utils';
 
 export const ShoppingList = () => {
-  const { shoppingItems, addShoppingItem, toggleShoppingItem, removeShoppingItem, updateShoppingItem, setCurrentView } = useGame();
+  const { shoppingItems, addShoppingItem, toggleShoppingItem, removeShoppingItem, updateShoppingItem, savedRecipes, addRecipe, removeRecipe, addRecipeToShopping, setCurrentView } = useGame();
   const [name, setName] = useState('');
+  const [recipeName, setRecipeName] = useState('');
+  const [recipeIngredients, setRecipeIngredients] = useState('');
+  const [recipeServings, setRecipeServings] = useState(1);
   const [budget, setBudget] = useState(() => Number(localStorage.getItem('bodmod-shopping-budget') || 0));
   const add = () => { addShoppingItem(name); setName(''); };
+  const saveRecipe = () => {
+    const ingredients = recipeIngredients.split(',').map(x=>x.trim()).filter(Boolean);
+    if (!recipeName.trim() || !ingredients.length) return;
+    addRecipe({ name: recipeName.trim(), servings: Math.max(1, recipeServings), ingredients, favourite: true });
+    setRecipeName(''); setRecipeIngredients(''); setRecipeServings(1);
+  };
   const planned = shoppingItems.reduce((sum,i)=>sum + (i.estimatedPrice || 0) * (i.quantity || 1),0);
   const trolley = shoppingItems.filter(i=>i.checked).reduce((sum,i)=>sum + (i.actualPrice ?? i.estimatedPrice ?? 0) * (i.quantity || 1),0);
   const remaining = Math.max(0,budget-trolley);
@@ -17,6 +26,14 @@ export const ShoppingList = () => {
 
   return <div className="space-y-5 pb-24">
     <div className="flex items-center justify-between"><div><h1 className="text-3xl font-black uppercase italic">Shop</h1><p className="text-slate-500">Plan it. Price it. Scan it. Tick it off.</p></div><ShoppingCart className="w-8 h-8 text-indigo-600"/></div>
+
+    <Card><CardContent className="p-5 space-y-4">
+      <div><div className="text-xs font-black uppercase text-indigo-600">Saved Meals & Recipes</div><div className="text-sm text-slate-500">Save it once. Plan it again in one tap.</div></div>
+      <div className="grid md:grid-cols-[1fr_100px] gap-2"><input value={recipeName} onChange={e=>setRecipeName(e.target.value)} placeholder="Recipe name" className="rounded-xl border-2 border-slate-200 p-3 font-bold"/><input type="number" min="1" value={recipeServings} onChange={e=>setRecipeServings(Number(e.target.value))} aria-label="Servings" className="rounded-xl border-2 border-slate-200 p-3 font-bold" /></div>
+      <textarea value={recipeIngredients} onChange={e=>setRecipeIngredients(e.target.value)} placeholder="Ingredients, separated by commas…" className="w-full min-h-20 rounded-xl border-2 border-slate-200 p-3 font-bold"/>
+      <Button onClick={saveRecipe} disabled={!recipeName.trim() || !recipeIngredients.trim()} className="w-full font-black uppercase"><Plus className="mr-2 w-4 h-4"/> Save Recipe</Button>
+      {savedRecipes.length===0 ? <div className="text-center py-4 text-slate-400 font-bold">No saved recipes yet.</div> : <div className="space-y-2">{savedRecipes.map(r=><div key={r.id} className="rounded-xl border-2 p-4"><div className="flex gap-3 items-start"><div className="flex-1"><div className="font-black">{r.name}</div><div className="text-xs text-slate-500">{r.servings} serving{r.servings===1?'':'s'} · {r.ingredients.length} ingredients</div><div className="text-xs text-slate-400 mt-1">{r.ingredients.join(' · ')}</div></div><button onClick={()=>removeRecipe(r.id)} aria-label={`Delete ${r.name}`}><Trash2 className="w-4 h-4 text-slate-400"/></button></div><Button onClick={()=>addRecipeToShopping(r.id)} variant="outline" className="w-full mt-3 font-black uppercase text-xs"><ShoppingCart className="mr-2 w-4 h-4"/> Add ingredients to planned list</Button></div>)}</div>}
+    </CardContent></Card>
 
     <Card className="bg-slate-900 text-white border-0"><CardContent className="p-5 space-y-4">
       <div className="flex items-center gap-2 text-indigo-300 text-xs font-black uppercase"><WalletCards className="w-4 h-4"/> Shopping Budget</div>
