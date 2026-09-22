@@ -63,6 +63,13 @@ export interface FoodLogEntry {
   };
 }
 
+export interface ShoppingItem {
+  id: string;
+  name: string;
+  checked: boolean;
+  source?: 'manual' | 'scan' | 'recipe';
+}
+
 export interface MoodEntry {
   id: string;
   timestamp: Date;
@@ -120,6 +127,10 @@ interface GameContextType {
   logs: FoodLogEntry[];
   addLog: (entry: FoodLogEntry) => void;
   moodLogs: MoodEntry[];
+  shoppingItems: ShoppingItem[];
+  addShoppingItem: (name: string, source?: ShoppingItem['source']) => void;
+  toggleShoppingItem: (id: string) => void;
+  removeShoppingItem: (id: string) => void;
   addMood: (entry: MoodEntry) => void;
   currentView: string;
   setCurrentView: (view: string) => void;
@@ -140,11 +151,18 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
   const [missions, setMissions] = useState<Mission[]>(defaultMissions);
   const [logs, setLogs] = useState<FoodLogEntry[]>([]);
   const [moodLogs, setMoodLogs] = useState<MoodEntry[]>([]);
+  const [shoppingItems, setShoppingItems] = useState<ShoppingItem[]>(() => {
+    try { return JSON.parse(localStorage.getItem('bodmod-shopping') || '[]'); } catch { return []; }
+  });
   const [currentView, setCurrentView] = useState('dashboard');
 
   useEffect(() => {
     localStorage.setItem('bodmod-profile', JSON.stringify(profile));
   }, [profile]);
+
+  useEffect(() => {
+    localStorage.setItem('bodmod-shopping', JSON.stringify(shoppingItems));
+  }, [shoppingItems]);
 
   const updateProfile = (updates: Partial<PersonalProfile>) => {
     setProfile(prev => ({ ...prev, ...updates }));
@@ -190,6 +208,14 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     // For now, let's assume 'scan' mission is triggered separately or if 'addLog' is called from scan view
   };
 
+  const addShoppingItem = (name: string, source: ShoppingItem['source'] = 'manual') => {
+    const clean = name.trim();
+    if (!clean) return;
+    setShoppingItems(prev => prev.some(i => i.name.toLowerCase() === clean.toLowerCase() && !i.checked) ? prev : [{ id: Date.now().toString(), name: clean, checked: false, source }, ...prev]);
+  };
+  const toggleShoppingItem = (id: string) => setShoppingItems(prev => prev.map(i => i.id === id ? { ...i, checked: !i.checked } : i));
+  const removeShoppingItem = (id: string) => setShoppingItems(prev => prev.filter(i => i.id !== id));
+
   const addMood = (entry: MoodEntry) => {
       setMoodLogs(prev => [entry, ...prev]);
       addMomentum(5);
@@ -212,7 +238,11 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
       setCurrentView,
       addMomentum,
       addHealthyBank,
-      spendHealthyBank
+      spendHealthyBank,
+      shoppingItems,
+      addShoppingItem,
+      toggleShoppingItem,
+      removeShoppingItem
     }}>
       {children}
     </GameContext.Provider>
