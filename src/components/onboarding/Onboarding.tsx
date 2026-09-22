@@ -121,7 +121,7 @@ export const Onboarding = () => {
         )}
 
         {/* Step 3: Body goal */}
-        {step === 5 && (
+        {step === 3 && (
           <Card className="border-0 shadow-xl"><CardContent className="p-8 space-y-5">
             <div className="text-center"><Target className="w-12 h-12 text-indigo-500 mx-auto mb-3" /><h2 className="text-2xl font-black uppercase">Set Your Target</h2><p className="text-slate-500">BODMOD turns the numbers into a practical plan.</p></div>
             <div className="grid grid-cols-2 gap-3">
@@ -139,7 +139,7 @@ export const Onboarding = () => {
         )}
 
         {/* Step 4: Exercise choice */}
-        {step === 6 && (
+        {step === 4 && (
           <Card className="border-0 shadow-xl"><CardContent className="p-8 space-y-5">
             <div className="text-center"><Dumbbell className="w-12 h-12 text-emerald-500 mx-auto mb-3" /><h2 className="text-2xl font-black uppercase">Choose Your Movement</h2><p className="text-slate-500">Pick what you will actually do. Change it anytime.</p></div>
             <div className="grid grid-cols-2 gap-3">{EXERCISE_OPTIONS.map(x => {
@@ -151,7 +151,7 @@ export const Onboarding = () => {
         )}
 
         {/* Step 5: Allergies */}
-        {step === 3 && (
+        {step === 5 && (
             <Card className="border-0 shadow-xl animate-in fade-in slide-in-from-right-8">
                 <CardContent className="p-8 space-y-6">
                     <div className="text-center">
@@ -177,7 +177,7 @@ export const Onboarding = () => {
         )}
 
         {/* Step 6: Conditions & Diet */}
-        {step === 4 && (
+        {step === 6 && (
             <Card className="border-0 shadow-xl animate-in fade-in slide-in-from-right-8">
                  <CardContent className="p-8 space-y-6">
                     <div className="text-center">
