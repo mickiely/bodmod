@@ -68,6 +68,11 @@ export interface ShoppingItem {
   name: string;
   checked: boolean;
   source?: 'manual' | 'scan' | 'recipe';
+  quantity?: number;
+  estimatedPrice?: number;
+  actualPrice?: number;
+  retailer?: 'Woolworths' | 'Coles' | 'IGA' | 'Other';
+  special?: boolean;
 }
 
 export interface MoodEntry {
@@ -131,6 +136,7 @@ interface GameContextType {
   addShoppingItem: (name: string, source?: ShoppingItem['source']) => void;
   toggleShoppingItem: (id: string) => void;
   removeShoppingItem: (id: string) => void;
+  updateShoppingItem: (id: string, updates: Partial<ShoppingItem>) => void;
   addMood: (entry: MoodEntry) => void;
   currentView: string;
   setCurrentView: (view: string) => void;
@@ -215,6 +221,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
   };
   const toggleShoppingItem = (id: string) => setShoppingItems(prev => prev.map(i => i.id === id ? { ...i, checked: !i.checked } : i));
   const removeShoppingItem = (id: string) => setShoppingItems(prev => prev.filter(i => i.id !== id));
+  const updateShoppingItem = (id: string, updates: Partial<ShoppingItem>) => setShoppingItems(prev => prev.map(i => i.id === id ? { ...i, ...updates } : i));
 
   const addMood = (entry: MoodEntry) => {
       setMoodLogs(prev => [entry, ...prev]);
@@ -242,7 +249,8 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
       shoppingItems,
       addShoppingItem,
       toggleShoppingItem,
-      removeShoppingItem
+      removeShoppingItem,
+      updateShoppingItem
     }}>
       {children}
     </GameContext.Provider>
