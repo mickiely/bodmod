@@ -2,7 +2,7 @@ import React from 'react';
 import { useGame, Mission } from '../context/GameContext';
 import { PowerBars } from '../shared/PowerBars';
 import { Button } from '../ui/button';
-import { ScanBarcode, Utensils, HeartPulse, UserCircle, Settings as SettingsIcon, Zap, CheckCircle2, ChevronRight, Flame } from 'lucide-react';
+import { ScanBarcode, Utensils, HeartPulse, UserCircle, Settings as SettingsIcon, Zap, CheckCircle2, ChevronRight, Flame, Landmark, Target } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { format } from 'date-fns';
 import { cn } from '../ui/utils';
@@ -61,6 +61,20 @@ export const Dashboard = () => {
                   </div>
               </div>
           </div>
+      </div>
+
+      {/* Goal + Healthy Bank */}
+      <div className="grid grid-cols-2 gap-3">
+        <Card className="border-2 border-slate-200"><CardContent className="p-4">
+          <div className="flex items-center gap-2 text-xs font-black uppercase text-slate-400"><Target className="w-4 h-4" /> Goal</div>
+          <div className="mt-2 text-lg font-black">{profile.bodyGoal?.targetWeightKg ? `${profile.bodyGoal.currentWeightKg} → ${profile.bodyGoal.targetWeightKg} kg` : 'Set your target'}</div>
+          <div className="text-xs text-slate-500">{profile.bodyGoal?.targetDate ? `Target ${profile.bodyGoal.targetDate}` : 'Build a realistic timeline'}</div>
+        </CardContent></Card>
+        <Card className="border-2 border-emerald-200 bg-emerald-50"><CardContent className="p-4">
+          <div className="flex items-center gap-2 text-xs font-black uppercase text-emerald-700"><Landmark className="w-4 h-4" /> Healthy Bank</div>
+          <div className="mt-2 text-2xl font-black text-emerald-900">{profile.healthyBank || 0}</div>
+          <div className="text-xs text-emerald-700">Flex credits earned</div>
+        </CardContent></Card>
       </div>
 
       {/* Next Step Card */}
