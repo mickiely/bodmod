@@ -1,6 +1,6 @@
 import React from 'react';
 import { useGame } from '../context/GameContext';
-import { LayoutDashboard, History, ScanBarcode, HeartPulse, UserCircle, Settings, Menu, CheckCircle2, ShoppingCart, Footprints } from 'lucide-react';
+import { LayoutDashboard, History, ScanBarcode, HeartPulse, UserCircle, Settings, Menu, CheckCircle2, ShoppingCart, Footprints, Watch } from 'lucide-react';
 import { Button } from '../ui/button';
 import { cn } from '../ui/utils';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
@@ -18,6 +18,7 @@ export const AppShell = ({ children }: AppShellProps) => {
     { id: 'log', label: 'Food Log', icon: History },
     { id: 'shopping', label: 'Shopping', icon: ShoppingCart },
     { id: 'move', label: 'Move', icon: Footprints },
+    { id: 'connections', label: 'Devices', icon: Watch },
     { id: 'wellness', label: 'Wellness', icon: HeartPulse },
     { id: 'profile', label: 'SOS Kit', icon: UserCircle },
   ];
