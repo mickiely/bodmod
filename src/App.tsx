@@ -11,6 +11,7 @@ import { Onboarding } from './components/onboarding/Onboarding';
 import { Toaster } from './components/ui/sonner';
 import { AuthGate } from './components/auth/AuthGate';
 import { ShoppingList } from './components/shopping/ShoppingList';
+import { MoveTracker } from './components/move/MoveTracker';
 
 const MainContent = () => {
   const { currentView, profile } = useGame();
@@ -49,6 +50,8 @@ const MainContent = () => {
       );
     case 'shopping':
        return <AppShell><ShoppingList /></AppShell>;
+    case 'move':
+       return <AppShell><MoveTracker /></AppShell>;
     case 'settings':
        return (
         <AppShell>
