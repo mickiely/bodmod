@@ -50,6 +50,42 @@ export const ScanView = () => {
   const [scanResult, setScanResult] = useState<typeof MOCK_PRODUCTS[0] | null>(null);
   const [portion, setPortion] = useState(1);
   const [customGrams, setCustomGrams] = useState('');
+  const [barcode, setBarcode] = useState('');
+  const [lookupError, setLookupError] = useState('');
+
+  const lookupBarcode = async () => {
+    const code = barcode.replace(/\D/g, '');
+    if (!code) return;
+    setLookupError('');
+    setStep('scanning');
+    try {
+      const fields = 'code,product_name,brands,quantity,product_quantity,image_front_url,ingredients_text,allergens_tags,nutriments';
+      const response = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json?fields=${fields}`);
+      const data = await response.json();
+      if (!data.status || !data.product) throw new Error('not-found');
+      const p = data.product;
+      const n = p.nutriments || {};
+      const grams = Number(p.product_quantity) || Number(String(p.quantity || '').match(/[\d.]+/)?.[0]) || 100;
+      setScanResult({
+        id: String(p.code || code),
+        name: p.product_name || p.brands || `Product ${code}`,
+        packageGrams: grams,
+        nutrition: {
+          fat: Number(n.fat_100g || 0) * grams / 100,
+          sugar: Number(n.sugars_100g || 0) * grams / 100,
+          salt: Number(n.salt_100g || 0) * grams / 100,
+          protein: Number(n.proteins_100g || 0) * grams / 100,
+          calories: Number(n['energy-kcal_100g'] || 0) * grams / 100,
+        },
+        allergens: (p.allergens_tags || []).map((x: string) => x.replace(/^en:/,'').replace(/-/g,' ').replace(/\b\w/g,(c:string)=>c.toUpperCase())),
+        image: p.image_front_url || '',
+      });
+      setPortion(1); setCustomGrams(''); setStep('result');
+    } catch {
+      setLookupError('Product not found yet. Next step: capture the label, ingredients and nutrition panel.');
+      setStep('camera');
+    }
+  };
 
   const handleScan = () => {
     setStep('scanning');
@@ -139,9 +175,14 @@ export const ScanView = () => {
                 >
                     <ScanBarcode className="w-8 h-8 stroke-[2.5]" />
                 </Button>
-                <Button variant="link" className="text-slate-400 font-bold uppercase tracking-wider text-xs">
-                    Or search manually
-                </Button>
+                <div className="w-full max-w-sm space-y-2">
+                  <div className="flex gap-2">
+                    <input inputMode="numeric" value={barcode} onChange={e=>setBarcode(e.target.value)} placeholder="Enter barcode to test" className="flex-1 rounded-xl bg-white/10 border border-white/20 px-4 py-3 text-white placeholder:text-slate-500 font-mono" />
+                    <Button onClick={lookupBarcode} disabled={!barcode.trim()} className="bg-indigo-600 font-black uppercase">Lookup</Button>
+                  </div>
+                  <p className="text-center text-slate-500 text-[11px] font-bold uppercase">Real product lookup via Open Food Facts</p>
+                  {lookupError && <div className="rounded-xl border border-orange-500/40 bg-orange-500/10 p-3 text-xs font-bold text-orange-200">{lookupError}</div>}
+                </div>
             </div>
         </div>
     );
