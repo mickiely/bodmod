@@ -10,6 +10,7 @@ import { Settings } from './components/settings/Settings';
 import { Onboarding } from './components/onboarding/Onboarding';
 import { Toaster } from './components/ui/sonner';
 import { AuthGate } from './components/auth/AuthGate';
+import { ShoppingList } from './components/shopping/ShoppingList';
 
 const MainContent = () => {
   const { currentView, profile } = useGame();
@@ -46,6 +47,8 @@ const MainContent = () => {
             <WellnessHub />
         </AppShell>
       );
+    case 'shopping':
+       return <AppShell><ShoppingList /></AppShell>;
     case 'settings':
        return (
         <AppShell>
