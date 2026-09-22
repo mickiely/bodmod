@@ -75,6 +75,15 @@ export interface ShoppingItem {
   special?: boolean;
 }
 
+export interface SavedRecipe {
+  id: string;
+  name: string;
+  servings: number;
+  ingredients: string[];
+  favourite: boolean;
+  createdAt: string;
+}
+
 export interface MoodEntry {
   id: string;
   timestamp: Date;
@@ -132,6 +141,10 @@ interface GameContextType {
   logs: FoodLogEntry[];
   addLog: (entry: FoodLogEntry) => void;
   moodLogs: MoodEntry[];
+  savedRecipes: SavedRecipe[];
+  addRecipe: (recipe: Omit<SavedRecipe, 'id' | 'createdAt'>) => void;
+  removeRecipe: (id: string) => void;
+  addRecipeToShopping: (id: string) => void;
   shoppingItems: ShoppingItem[];
   addShoppingItem: (name: string, source?: ShoppingItem['source']) => void;
   toggleShoppingItem: (id: string) => void;
@@ -157,6 +170,9 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
   const [missions, setMissions] = useState<Mission[]>(defaultMissions);
   const [logs, setLogs] = useState<FoodLogEntry[]>([]);
   const [moodLogs, setMoodLogs] = useState<MoodEntry[]>([]);
+  const [savedRecipes, setSavedRecipes] = useState<SavedRecipe[]>(() => {
+    try { return JSON.parse(localStorage.getItem('bodmod-recipes') || '[]'); } catch { return []; }
+  });
   const [shoppingItems, setShoppingItems] = useState<ShoppingItem[]>(() => {
     try { return JSON.parse(localStorage.getItem('bodmod-shopping') || '[]'); } catch { return []; }
   });
@@ -169,6 +185,10 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     localStorage.setItem('bodmod-shopping', JSON.stringify(shoppingItems));
   }, [shoppingItems]);
+
+  useEffect(() => {
+    localStorage.setItem('bodmod-recipes', JSON.stringify(savedRecipes));
+  }, [savedRecipes]);
 
   const updateProfile = (updates: Partial<PersonalProfile>) => {
     setProfile(prev => ({ ...prev, ...updates }));
@@ -223,6 +243,16 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
   const removeShoppingItem = (id: string) => setShoppingItems(prev => prev.filter(i => i.id !== id));
   const updateShoppingItem = (id: string, updates: Partial<ShoppingItem>) => setShoppingItems(prev => prev.map(i => i.id === id ? { ...i, ...updates } : i));
 
+  const addRecipe = (recipe: Omit<SavedRecipe, 'id' | 'createdAt'>) => {
+    setSavedRecipes(prev => [{ ...recipe, id: Date.now().toString(), createdAt: new Date().toISOString() }, ...prev]);
+  };
+  const removeRecipe = (id: string) => setSavedRecipes(prev => prev.filter(r => r.id !== id));
+  const addRecipeToShopping = (id: string) => {
+    const recipe = savedRecipes.find(r => r.id === id);
+    if (!recipe) return;
+    recipe.ingredients.forEach(name => addShoppingItem(name, 'recipe'));
+  };
+
   const addMood = (entry: MoodEntry) => {
       setMoodLogs(prev => [entry, ...prev]);
       addMomentum(5);
@@ -240,6 +270,10 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
       logs,
       addLog,
       moodLogs,
+      savedRecipes,
+      addRecipe,
+      removeRecipe,
+      addRecipeToShopping,
       addMood,
       currentView,
       setCurrentView,
