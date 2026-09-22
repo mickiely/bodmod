@@ -12,6 +12,7 @@ import { Toaster } from './components/ui/sonner';
 import { AuthGate } from './components/auth/AuthGate';
 import { ShoppingList } from './components/shopping/ShoppingList';
 import { MoveTracker } from './components/move/MoveTracker';
+import { Connections } from './components/connections/Connections';
 
 const MainContent = () => {
   const { currentView, profile } = useGame();
@@ -52,6 +53,8 @@ const MainContent = () => {
        return <AppShell><ShoppingList /></AppShell>;
     case 'move':
        return <AppShell><MoveTracker /></AppShell>;
+    case 'connections':
+       return <AppShell><Connections /></AppShell>;
     case 'settings':
        return (
         <AppShell>
