@@ -34,6 +34,7 @@ export interface PersonalProfile {
   goal: string;
   bodyGoal: BodyGoal;
   momentum: number; // 0-100
+  healthyBank: number; // behavioural reward credits, not calories
   streak: number;
   onboardingCompleted: boolean;
   accessibility: AccessibilitySettings;
@@ -97,6 +98,7 @@ const defaultProfile: PersonalProfile = {
     exerciseTypes: ['walking'],
   },
   momentum: 30, // Start with some momentum
+  healthyBank: 0,
   streak: 0,
   onboardingCompleted: false,
   accessibility: defaultAccessibility,
@@ -122,6 +124,8 @@ interface GameContextType {
   currentView: string;
   setCurrentView: (view: string) => void;
   addMomentum: (amount: number) => void;
+  addHealthyBank: (amount: number) => void;
+  spendHealthyBank: (amount: number) => boolean;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -153,10 +157,21 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     }));
   };
 
+  const addHealthyBank = (amount: number) => {
+    setProfile(prev => ({ ...prev, healthyBank: Math.max(0, (prev.healthyBank || 0) + amount) }));
+  };
+
+  const spendHealthyBank = (amount: number) => {
+    if ((profile.healthyBank || 0) < amount) return false;
+    setProfile(prev => ({ ...prev, healthyBank: Math.max(0, (prev.healthyBank || 0) - amount) }));
+    return true;
+  };
+
   const completeMission = (id: string) => {
     setMissions(prev => prev.map(m => {
       if (m.id === id && !m.completed) {
         addMomentum(m.rewardMomentum);
+        addHealthyBank(m.rewardMomentum);
         return { ...m, completed: true };
       }
       return m;
@@ -195,7 +210,9 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
       addMood,
       currentView,
       setCurrentView,
-      addMomentum
+      addMomentum,
+      addHealthyBank,
+      spendHealthyBank
     }}>
       {children}
     </GameContext.Provider>
