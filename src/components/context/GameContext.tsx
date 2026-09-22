@@ -35,6 +35,7 @@ export interface PersonalProfile {
   bodyGoal: BodyGoal;
   momentum: number; // 0-100
   healthyBank: number; // behavioural reward credits, not calories
+  completedActions: string[];
   streak: number;
   onboardingCompleted: boolean;
   accessibility: AccessibilitySettings;
@@ -120,6 +121,7 @@ const defaultProfile: PersonalProfile = {
   },
   momentum: 30, // Start with some momentum
   healthyBank: 0,
+  completedActions: [],
   streak: 0,
   onboardingCompleted: false,
   accessibility: defaultAccessibility,
@@ -156,6 +158,7 @@ interface GameContextType {
   addMomentum: (amount: number) => void;
   addHealthyBank: (amount: number) => void;
   spendHealthyBank: (amount: number) => boolean;
+  rewardAction: (actionKey: string, momentum?: number, bank?: number) => boolean;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -205,6 +208,19 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     setProfile(prev => ({ ...prev, healthyBank: Math.max(0, (prev.healthyBank || 0) + amount) }));
   };
 
+  const rewardAction = (actionKey: string, momentum = 5, bank = 5) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const key = `${today}:${actionKey}`;
+    if ((profile.completedActions || []).includes(key)) return false;
+    setProfile(prev => ({
+      ...prev,
+      momentum: Math.min(100, prev.momentum + momentum),
+      healthyBank: Math.max(0, (prev.healthyBank || 0) + bank),
+      completedActions: [...(prev.completedActions || []).filter(k => k.slice(0, 10) === today), key]
+    }));
+    return true;
+  };
+
   const spendHealthyBank = (amount: number) => {
     if ((profile.healthyBank || 0) < amount) return false;
     setProfile(prev => ({ ...prev, healthyBank: Math.max(0, (prev.healthyBank || 0) - amount) }));
@@ -224,7 +240,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
 
   const addLog = (entry: FoodLogEntry) => {
     setLogs(prev => [entry, ...prev]);
-    addMomentum(5); // Small reward for logging
+    rewardAction('food-log', 5, 5);
     
     // Check for 'scan' or 'log' missions
     const logMission = missions.find(m => m.type === 'log' && !m.completed);
@@ -255,7 +271,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
 
   const addMood = (entry: MoodEntry) => {
       setMoodLogs(prev => [entry, ...prev]);
-      addMomentum(5);
+      rewardAction('wellness-checkin', 5, 5);
       
       const moodMission = missions.find(m => m.type === 'mood' && !m.completed);
       if (moodMission) completeMission(moodMission.id);
@@ -280,6 +296,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
       addMomentum,
       addHealthyBank,
       spendHealthyBank,
+      rewardAction,
       shoppingItems,
       addShoppingItem,
       toggleShoppingItem,
