@@ -4,6 +4,17 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 
 export type UnitSystem = 'metric' | 'imperial';
 export type EnergyUnit = 'kcal' | 'kJ';
+export type ExerciseType = 'walking' | 'calisthenics' | 'strength' | 'running' | 'cycling' | 'mobility' | 'swimming' | 'sport';
+
+export interface BodyGoal {
+  heightCm: number;
+  currentWeightKg: number;
+  targetWeightKg: number;
+  age: number;
+  targetDate: string;
+  weeklyTargetKg: number;
+  exerciseTypes: ExerciseType[];
+}
 
 export interface AccessibilitySettings {
   fontScale: number;
@@ -21,6 +32,7 @@ export interface PersonalProfile {
   conditions: string[];
   dietPreferences: string[];
   goal: string;
+  bodyGoal: BodyGoal;
   momentum: number; // 0-100
   streak: number;
   onboardingCompleted: boolean;
@@ -74,7 +86,16 @@ const defaultProfile: PersonalProfile = {
   allergies: [],
   conditions: [],
   dietPreferences: [],
-  goal: "Eat safer",
+  goal: "Build momentum",
+  bodyGoal: {
+    heightCm: 0,
+    currentWeightKg: 0,
+    targetWeightKg: 0,
+    age: 0,
+    targetDate: '',
+    weeklyTargetKg: 0,
+    exerciseTypes: ['walking'],
+  },
   momentum: 30, // Start with some momentum
   streak: 0,
   onboardingCompleted: false,
