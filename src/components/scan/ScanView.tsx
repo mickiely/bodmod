@@ -11,7 +11,8 @@ import { cn } from '../ui/utils';
 const MOCK_PRODUCTS = [
   {
     id: 'p1',
-    name: 'Mega Crunch Chips',
+    name: 'Baked Beans',
+    packageGrams: 400,
     nutrition: { fat: 12, sugar: 2, salt: 1.5, protein: 4, calories: 150 },
     allergens: ['Peanuts'], 
     image: 'https://images.unsplash.com/photo-1566478919030-2609e87012bc?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
@@ -19,6 +20,7 @@ const MOCK_PRODUCTS = [
   {
     id: 'p2',
     name: 'Oat Power Bar',
+    packageGrams: 60,
     nutrition: { fat: 4, sugar: 8, salt: 0.1, protein: 12, calories: 180 },
     allergens: ['Oats'],
     image: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
@@ -26,6 +28,7 @@ const MOCK_PRODUCTS = [
   {
     id: 'p3',
     name: 'Greek Yogurt',
+    packageGrams: 170,
     nutrition: { fat: 0, sugar: 4, salt: 0.1, protein: 15, calories: 90 },
     allergens: ['Dairy'],
     image: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
@@ -33,6 +36,7 @@ const MOCK_PRODUCTS = [
   {
     id: 'p4',
     name: 'Apple',
+    packageGrams: 180,
     nutrition: { fat: 0, sugar: 10, salt: 0, protein: 0, calories: 50 },
     allergens: [],
     image: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
@@ -43,6 +47,8 @@ export const ScanView = () => {
   const { profile, addLog, setCurrentView } = useGame();
   const [step, setStep] = useState<'camera' | 'scanning' | 'result'>('camera');
   const [scanResult, setScanResult] = useState<typeof MOCK_PRODUCTS[0] | null>(null);
+  const [portion, setPortion] = useState(1);
+  const [customGrams, setCustomGrams] = useState('');
 
   const handleScan = () => {
     setStep('scanning');
@@ -60,6 +66,17 @@ export const ScanView = () => {
     return { isSafe, conflicts };
   };
 
+  const scaledNutrition = (product: typeof MOCK_PRODUCTS[0]) => {
+    const factor = customGrams ? Math.max(0, Number(customGrams)) / product.packageGrams : portion;
+    return Object.fromEntries(Object.entries(product.nutrition).map(([key, value]) => [key, Math.round((value as number) * factor * 10) / 10])) as typeof product.nutrition;
+  };
+
+  const portionLabel = (product: typeof MOCK_PRODUCTS[0]) => {
+    if (customGrams) return `${customGrams} g`;
+    if (portion === 1) return `whole pack · ${product.packageGrams} g`;
+    return `${Math.round(portion * 100)}% · ${Math.round(product.packageGrams * portion)} g`;
+  };
+
   const handleLog = () => {
     if (!scanResult) return;
     const { isSafe, conflicts } = checkSafety(scanResult);
@@ -70,7 +87,7 @@ export const ScanView = () => {
         foodName: scanResult.name,
         isSafe,
         reason: conflicts.join(', '),
-        nutrition: scanResult.nutrition
+        nutrition: scaledNutrition(scanResult)
     };
 
     addLog(entry);
@@ -147,6 +164,7 @@ export const ScanView = () => {
 
   if (step === 'result' && scanResult) {
       const { isSafe, conflicts } = checkSafety(scanResult);
+      const nutrition = scaledNutrition(scanResult);
       
       return (
           <div className="h-full flex flex-col bg-slate-50 relative overflow-hidden">
@@ -158,14 +176,14 @@ export const ScanView = () => {
                   
                   <div className="absolute bottom-0 left-0 p-6 w-full">
                       <h1 className="text-3xl font-black text-white uppercase italic leading-none mb-1">{scanResult.name}</h1>
-                      <p className="text-slate-300 font-bold text-sm uppercase">1 Serving • {scanResult.nutrition.calories} kcal</p>
+                      <p className="text-slate-300 font-bold text-sm uppercase">{portionLabel(scanResult)} • {nutrition.calories} kcal</p>
                   </div>
                   
                   <Button 
                     variant="ghost" 
                     size="icon" 
                     className="absolute top-4 left-4 text-white hover:bg-white/20"
-                    onClick={() => { setStep('camera'); setScanResult(null); }}
+                    onClick={() => { setStep('camera'); setScanResult(null); setPortion(1); setCustomGrams(''); }}
                   >
                       <ArrowLeft className="w-6 h-6" />
                   </Button>
@@ -203,10 +221,22 @@ export const ScanView = () => {
                       </div>
                  </div>
 
+                 {/* Portion selector */}
+                 <div className="space-y-3">
+                   <div><h3 className="text-sm font-black uppercase text-slate-400 tracking-wider">How much did you eat?</h3><p className="text-xs text-slate-500 mt-1">Nutrition and Power Bars scale to the amount you actually log.</p></div>
+                   <div className="grid grid-cols-4 gap-2">
+                     {[[0.25,'¼'],[0.5,'½'],[0.75,'¾'],[1,'ALL']].map(([value,label]) => (
+                       <button key={String(value)} onClick={()=>{setPortion(Number(value));setCustomGrams('');}} className={cn("rounded-xl border-2 py-3 font-black", !customGrams && portion===Number(value) ? "border-indigo-600 bg-indigo-50 text-indigo-700" : "border-slate-200 bg-white text-slate-500")}>{label}</button>
+                     ))}
+                   </div>
+                   <div className="flex items-center gap-2"><input type="number" min="1" max={scanResult.packageGrams} placeholder="Custom grams" value={customGrams} onChange={e=>setCustomGrams(e.target.value)} className="flex-1 rounded-xl border-2 border-slate-200 p-3 font-bold" /><span className="text-sm font-black text-slate-400">/ {scanResult.packageGrams}g</span></div>
+                   <div className="rounded-xl bg-indigo-50 border border-indigo-100 p-3"><div className="text-xs font-black uppercase text-indigo-500">Logging</div><div className="font-black text-indigo-900">{portionLabel(scanResult)} · {nutrition.calories} kcal</div></div>
+                 </div>
+
                  {/* Stats HUD */}
                  <div className="space-y-3">
                      <h3 className="text-sm font-black uppercase text-slate-400 tracking-wider">Power Bars</h3>
-                     <PowerBars nutrition={scanResult.nutrition} />
+                     <PowerBars nutrition={nutrition} />
                  </div>
 
              </div>
