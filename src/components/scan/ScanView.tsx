@@ -19,7 +19,8 @@ const MOCK_PRODUCTS = [
   },
   {
     id: 'p2',
-    name: 'Oat Power Bar',
+    name: 'Milk Chocolate Block',
+    packageGrams: 180,
     packageGrams: 60,
     nutrition: { fat: 4, sugar: 8, salt: 0.1, protein: 12, calories: 180 },
     allergens: ['Oats'],
@@ -44,7 +45,7 @@ const MOCK_PRODUCTS = [
 ];
 
 export const ScanView = () => {
-  const { profile, addLog, setCurrentView } = useGame();
+  const { profile, addLog, setCurrentView, addShoppingItem } = useGame();
   const [step, setStep] = useState<'camera' | 'scanning' | 'result'>('camera');
   const [scanResult, setScanResult] = useState<typeof MOCK_PRODUCTS[0] | null>(null);
   const [portion, setPortion] = useState(1);
@@ -231,6 +232,12 @@ export const ScanView = () => {
                    </div>
                    <div className="flex items-center gap-2"><input type="number" min="1" max={scanResult.packageGrams} placeholder="Custom grams" value={customGrams} onChange={e=>setCustomGrams(e.target.value)} className="flex-1 rounded-xl border-2 border-slate-200 p-3 font-bold" /><span className="text-sm font-black text-slate-400">/ {scanResult.packageGrams}g</span></div>
                    <div className="rounded-xl bg-indigo-50 border border-indigo-100 p-3"><div className="text-xs font-black uppercase text-indigo-500">Logging</div><div className="font-black text-indigo-900">{portionLabel(scanResult)} · {nutrition.calories} kcal</div></div>
+                 </div>
+
+                 {/* Shopping + flex */}
+                 <div className="grid grid-cols-2 gap-3">
+                   <Button variant="outline" className="h-12 border-2 font-black uppercase" onClick={()=>{addShoppingItem(scanResult.name,'scan');toast.success('Added to shopping list');}}><Plus className="w-4 h-4 mr-2"/> Shopping</Button>
+                   <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-3"><div className="text-[10px] font-black uppercase text-emerald-600">Flex check</div><div className="text-xs font-bold text-emerald-900">{portionLabel(scanResult)} is what counts — not the whole pack.</div></div>
                  </div>
 
                  {/* Stats HUD */}
