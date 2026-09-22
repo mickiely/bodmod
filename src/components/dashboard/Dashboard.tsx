@@ -9,16 +9,45 @@ import { cn } from '../ui/utils';
 import { Progress } from '../ui/progress';
 
 export const Dashboard = () => {
-  const { profile, missions, logs, setCurrentView } = useGame();
+  const { profile, missions, logs, moodLogs, shoppingItems, savedRecipes, setCurrentView } = useGame();
 
-  // Determine "Next Step"
+  // BODMOD Next Move v1: choose ONE useful action from current context.
   const getNextStep = () => {
-      if (logs.length === 0) return { title: "Scan your first item", action: "scan", icon: ScanBarcode, desc: "Start building your safe food list." };
-      const lastLog = logs[0];
-      if (new Date().getTime() - lastLog.timestamp.getTime() > 1000 * 60 * 60 * 4) {
-          return { title: "Log your lunch", action: "log", icon: Utensils, desc: "Keep your energy levels tracked." };
+      const openMission = missions.find(m => !m.completed);
+      const openShopping = shoppingItems.filter(i => !i.checked);
+      const lastLogTime = logs[0]?.timestamp ? new Date(logs[0].timestamp).getTime() : 0;
+      const hoursSinceFood = lastLogTime ? (Date.now() - lastLogTime) / 36e5 : Infinity;
+      const lastMoodTime = moodLogs[0]?.timestamp ? new Date(moodLogs[0].timestamp).getTime() : 0;
+      const hoursSinceMood = lastMoodTime ? (Date.now() - lastMoodTime) / 36e5 : Infinity;
+      const preferredExercise = profile.bodyGoal?.exerciseTypes?.[0];
+
+      if (!profile.bodyGoal?.targetWeightKg) {
+        return { title: "Set your body goal", action: "settings", desc: "Give BODMOD a target so it can plan useful moves." };
       }
-      return { title: "Check your mood", action: "wellness", icon: HeartPulse, desc: "How is the fuel affecting you?" };
+      if (logs.length === 0) {
+        return { title: "Scan your first food", action: "scan", desc: "One scan gives BODMOD something real to work with." };
+      }
+      if (hoursSinceFood >= 4) {
+        return { title: "Quick-log your next meal", action: "scan", desc: "Scan it, choose your actual portion, done." };
+      }
+      if (hoursSinceMood >= 12) {
+        return { title: "3-second check-in", action: "wellness", desc: "Mood and energy help BODMOD make the next move easier." };
+      }
+      if (openShopping.length > 0) {
+        return { title: `Shop your next ${Math.min(openShopping.length, 5)} items`, action: "shopping", desc: "Use Supermarket Mode and keep the trolley on budget." };
+      }
+      if (savedRecipes.length === 0) {
+        return { title: "Save one easy meal", action: "shopping", desc: "Make tomorrow easier: save a meal and turn it into a shopping list." };
+      }
+      if (preferredExercise) {
+        const label = preferredExercise === 'walking' ? 'Take a 5-minute walk' : `Do 5 minutes of ${preferredExercise}`;
+        return { title: label, action: "dashboard", desc: "Small counts. Finish one useful movement block." };
+      }
+      if (openMission) {
+        const actions: Record<string,string> = { scan: 'scan', log: 'log', mood: 'wellness' };
+        return { title: openMission.title, action: actions[openMission.type] || 'dashboard', desc: `Finish it for +${openMission.rewardMomentum} Momentum.` };
+      }
+      return { title: "You're on track", action: "dashboard", desc: "No catch-up required. Keep the next choice easy." };
   };
 
   const nextStep = getNextStep();
@@ -84,7 +113,7 @@ export const Dashboard = () => {
               <CardContent className="p-6 flex items-center justify-between relative z-10">
                   <div className="space-y-1">
                       <div className="flex items-center gap-2 text-indigo-300 text-xs font-black uppercase tracking-wider mb-1">
-                          <Zap className="w-3 h-3" /> Recommended Action
+                          <Zap className="w-3 h-3" /> Next Move
                       </div>
                       <h2 className="text-2xl font-black uppercase italic tracking-wide group-hover:text-indigo-200 transition-colors">{nextStep.title}</h2>
                       <p className="text-slate-400 text-sm font-medium">{nextStep.desc}</p>
