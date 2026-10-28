@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useGame, FoodLogEntry } from '../context/GameContext';
 import { ScanBarcode, Zap, X, Check, Search, Save, ArrowLeft, Plus } from 'lucide-react';
 import { Button } from '../ui/button';
@@ -21,7 +21,6 @@ const MOCK_PRODUCTS = [
     id: 'p2',
     name: 'Milk Chocolate Block',
     packageGrams: 180,
-    packageGrams: 60,
     nutrition: { fat: 4, sugar: 8, salt: 0.1, protein: 12, calories: 180 },
     allergens: ['Oats'],
     image: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
@@ -52,9 +51,28 @@ export const ScanView = () => {
   const [customGrams, setCustomGrams] = useState('');
   const [barcode, setBarcode] = useState('');
   const [lookupError, setLookupError] = useState('');
+  const [cameraOn, setCameraOn] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const detectorRef = useRef<any>(null);
+  const busyRef = useRef(false);
+  const stopCamera = () => {streamRef.current?.getTracks().forEach(t=>t.stop());streamRef.current=null;setCameraOn(false);};
+  useEffect(()=>()=>stopCamera(),[]);
+  const startCamera = async () => {
+    setLookupError('');
+    if (!('BarcodeDetector' in window)) {setLookupError('Camera barcode recognition is unavailable in this browser. Use manual barcode entry below.');return;}
+    try {
+      detectorRef.current = new (window as any).BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128']});
+      const stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
+      streamRef.current=stream;setCameraOn(true);
+    } catch {setLookupError('Camera unavailable or permission denied. You can enter the barcode below.');stopCamera();}
+  };
+  useEffect(()=>{if(cameraOn&&videoRef.current&&streamRef.current){videoRef.current.srcObject=streamRef.current;videoRef.current.play().catch(()=>{});}},[cameraOn]);
+  useEffect(()=>{if(!cameraOn)return;let active=true;const scan=async()=>{if(!active||busyRef.current||!videoRef.current||videoRef.current.readyState<2)return;busyRef.current=true;try{const codes=await detectorRef.current.detect(videoRef.current);const code=codes?.[0]?.rawValue;if(code){stopCamera();setBarcode(code);await lookupBarcode(code);}}catch{}finally{busyRef.current=false;}};const id=window.setInterval(scan,350);return()=>{active=false;window.clearInterval(id);};},[cameraOn]);
 
-  const lookupBarcode = async () => {
-    const code = barcode.replace(/\D/g, '');
+
+  const lookupBarcode = async (detected?: string) => {
+    const code = (detected ?? barcode).replace(/\D/g, '');
     if (!code) return;
     setLookupError('');
     setStep('scanning');
@@ -85,16 +103,6 @@ export const ScanView = () => {
       setLookupError('Product not found yet. Next step: capture the label, ingredients and nutrition panel.');
       setStep('camera');
     }
-  };
-
-  const handleScan = () => {
-    setStep('scanning');
-    // Simulate scan delay
-    setTimeout(() => {
-        const product = MOCK_PRODUCTS[Math.floor(Math.random() * MOCK_PRODUCTS.length)];
-        setScanResult(product);
-        setStep('result');
-    }, 1500);
   };
 
   const checkSafety = (product: typeof MOCK_PRODUCTS[0]) => {
@@ -150,7 +158,7 @@ export const ScanView = () => {
 
             {/* Camera Viewport */}
             <div className="flex-1 relative overflow-hidden bg-slate-900">
-                <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=2574')] bg-cover bg-center opacity-40" />
+                {cameraOn ? <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover" /> : <div className="absolute inset-0 bg-slate-900" />}
                 
                 {/* HUD Overlay */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center p-8">
@@ -162,7 +170,7 @@ export const ScanView = () => {
                         
                         <div className="w-full h-0.5 bg-red-500 absolute top-1/2 shadow-[0_0_10px_rgba(239,68,68,0.8)] animate-[scan-line_2s_ease-in-out_infinite]" />
                     </div>
-                    <p className="mt-8 font-mono text-xs uppercase tracking-widest text-white/70">Align code within frame</p>
+                    <p className="mt-8 font-mono text-xs uppercase tracking-widest text-white/70">{cameraOn ? 'Hold barcode inside frame' : 'Tap camera button to scan'}</p>
                 </div>
             </div>
 
@@ -171,14 +179,14 @@ export const ScanView = () => {
                 <Button 
                     size="lg" 
                     className="w-20 h-20 rounded-full bg-white text-black hover:bg-slate-200 hover:scale-105 transition-all shadow-[0_0_20px_rgba(255,255,255,0.3)] p-0 flex items-center justify-center"
-                    onClick={handleScan}
+                    onClick={cameraOn ? stopCamera : startCamera}
                 >
                     <ScanBarcode className="w-8 h-8 stroke-[2.5]" />
                 </Button>
                 <div className="w-full max-w-sm space-y-2">
                   <div className="flex gap-2">
                     <input inputMode="numeric" value={barcode} onChange={e=>setBarcode(e.target.value)} placeholder="Enter barcode to test" className="flex-1 rounded-xl bg-white/10 border border-white/20 px-4 py-3 text-white placeholder:text-slate-500 font-mono" />
-                    <Button onClick={lookupBarcode} disabled={!barcode.trim()} className="bg-indigo-600 font-black uppercase">Lookup</Button>
+                    <Button onClick={() => lookupBarcode()} disabled={!barcode.trim()} className="bg-indigo-600 font-black uppercase">Lookup</Button>
                   </div>
                   <p className="text-center text-slate-500 text-[11px] font-bold uppercase">Real product lookup via Open Food Facts</p>
                   {lookupError && <div className="rounded-xl border border-orange-500/40 bg-orange-500/10 p-3 text-xs font-bold text-orange-200">{lookupError}</div>}
@@ -252,13 +260,13 @@ export const ScanView = () => {
                               "text-2xl font-black uppercase tracking-tight leading-none mb-1",
                               isSafe ? "text-emerald-800" : "text-red-800"
                           )}>
-                              {isSafe ? "Safe to Eat" : "Conflict Found"}
+                              {isSafe ? "No SOS flags found" : "Conflict Found"}
                           </h2>
                           <p className={cn(
                               "font-bold text-sm",
                               isSafe ? "text-emerald-600" : "text-red-600"
                           )}>
-                              {isSafe ? "No flags in SOS Kit." : `Contains ${conflicts.join(', ').toUpperCase()}`}
+                              {isSafe ? "No matching flags in available data. Check the package label, especially for allergies." : `Contains ${conflicts.join(', ').toUpperCase()}`}
                           </p>
                       </div>
                  </div>
